@@ -10,6 +10,22 @@ Questions not answered are missing keys and Dataframe puts NAN for those queston
 import requests
 import pandas
 
+def extract_dictionary(response_list,key):
+    list_of_dict = []
+    for item in response_list:
+        list_of_dict.append(item[key])
+    return list_of_dict
+
+def extract_into_dictionary(response_list,key):
+    list = []
+    for item in response_list:
+        list.append(item[key])
+
+    dict = {}
+    dict[key] = list
+
+    return dict
+
 
 def main():
     #request all responses including incomplete ones
@@ -18,29 +34,42 @@ def main():
         raise Exception('GET /tasks/ {}'.format(data.status_code))
 
 
-
     #convert the resp into JSON format
     allData = data.json()
-
-
-    question_list=allData['questions']
-
-    # create a dict that will have question 'id' as the key and actual question as the value
-    question_dict={}
-    for question in question_list:
-        question_dict[question['id']]=question['question']
+    # now the allData is a dictionary with 4 top level keys 'http_status','questions','responses', and 'stats'
+    # allData['questions'] is a list of dictionaries each of which has keys 'field_id','id', and 'questions'. There are 5 questions
+    # allData['responses'] is a list of dictionaries each with keys 'answers','completed','hidden','metadata', and 'token'
+    # allData['responses']['answers'] is a dictionary with keys that are the question id from the questions dictionary.
+    # allData['responses']['metadata'] is a dictionary with keys 'browser','date_land','date_submitted','network_id','platform','referer',and 'user_agent'
+    # we will produce a table such that each row corresponds to each response
 
     response_list = allData['responses']
 
-    # extract the answeres from the response_list
-    answers = []
-    for item in response_list:
-        answers.append(item['answers'])
+     # extract the answeres from the response_list
+    answer=extract_dictionary(response_list,'answers')
 
-    A=pandas.DataFrame(answers)
+    # extract the metadata from the response_list
+    meta = extract_dictionary(response_list, 'metadata')
 
-    A.to_csv('responses.csv')
+    # extract the completed from the response_list
+    completed = extract_into_dictionary(response_list, 'completed')
 
+    # extract the hidden from the response_list
+    hidden = extract_into_dictionary(response_list, 'hidden')
+
+    # extract the tokens from the response_list
+    tokens= extract_into_dictionary(response_list,'token')
+
+
+    A = pandas.DataFrame(answer)
+    B = pandas.DataFrame(completed)
+    C = pandas.DataFrame(hidden)
+    D = pandas.DataFrame(meta)
+    E = pandas.DataFrame(tokens)
+
+    result = pandas.concat([A, B, C, D, E], axis=1)
+
+    result.to_csv('responses.csv')
 
 if __name__ == "__main__":
     main()
