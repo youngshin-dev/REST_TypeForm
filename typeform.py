@@ -32,7 +32,12 @@ def main():
 
     response_list = allData['responses']
 
-    A=pandas.DataFrame(response_list)
+    # extract the answeres from the response_list
+    answers = []
+    for item in response_list:
+        answers.append(item['answers'])
+
+    A=pandas.DataFrame(answers)
 
     A.to_csv('responses.csv')
 
